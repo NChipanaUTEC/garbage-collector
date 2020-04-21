@@ -12,8 +12,6 @@ public:
     T *memoryLocation;
     unsigned int memorySize;
 
-    // Chequear lo de los arrays;
-
     // El constructor debe ser completado
     SmartPointerInfo(T *memLoc, unsigned int size = 0) {
         referenceCounter = 1;
@@ -22,7 +20,6 @@ public:
     }
 };
 
-// Esta sobrecarga no veo como no usarla
 template <class T>
 bool operator== (const SmartPointerInfo<T> &sm1, const SmartPointerInfo<T> &sm2){
     return (sm1.memoryLocation == sm2.memoryLocation);
@@ -75,10 +72,7 @@ public:
 
     // LAS FUNCIONES MAS IMPORTANTES SON COLLECT Y SHUTDOWN
 
-    // Sobrecargas obvias si las pongo
-    // flecha, posicion, (), *
-
-    // el shutdown y collect va a ser necesario para liberar toda la memoria
+    // el shutdown y collect para liberar toda la memoria
     static bool collect();
 
     T *operator=(T *t);
@@ -95,13 +89,11 @@ public:
 
     operator T*() { return address; }
 
-    // Los iteradores son como tal si se usa iter.h
-    // Return an Iter to the start of the allocated memory.
+    // Iteradores provenientes de iter.h
     Iter<T> begin(){
         return Iter<T>(address, address, address + memorySize);
     }
 
-    // Return an Iter to one past the end of an allocated array.
     Iter<T> end(){
         return Iter<T>(address + memorySize, address, address + memorySize);
     }
