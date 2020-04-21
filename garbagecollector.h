@@ -45,14 +45,14 @@ public:
     SmartPointer(T* addr = NULL) {
         if(first) {
             atexit(shutdown);
-        } 
+        }
         first = false;
         auto inf = SPInfo(address);
 
         if (inf != collection.end()) {
             inf->referenceCounter++;
         } else {
-            SmartElement<T> sElem(addr, size);
+            SmartElement<T> sElem(address, size);
             collection.push_front(sElem);
         }
 
