@@ -31,7 +31,6 @@ bool operator== (const SmartElement<T> &sm1, const SmartElement<T> &sm2){
 // Para el smart pointer si o si se necesita el address y el tamaño
 template <class T, int size = 0>
 class SmartPointer {
-public:
     static list<SmartElement<T>> collection;
 
     T *address;
@@ -194,12 +193,11 @@ SmartPointer<T,size>::SPInfo(T *ptr) {
 
 
 template <class T,int size>
-void SmartPointer<T,size>::shutdown() {
-    if(collectionSize() == 0) {
-        return;
-    }// list is empty
+void SmartPointer<T,size>::shutdown(){
+    auto p = collection.begin();
+    if(p.size() == 0) return; // list is empty
 
-    for (auto p = collection.begin(); p != collection.end(); p++){
+    for(p = collection.begin(); p != collection.end(); p++){
         p->referenceCounter = 0;
     }
 
