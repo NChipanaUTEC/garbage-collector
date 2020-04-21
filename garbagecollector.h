@@ -52,7 +52,7 @@ public:
         if (inf != collection.end()) {
             inf->referenceCounter++;
         } else {
-            SmartElement<T> sElem(address, size);
+            SmartElement<T> sElem(addr, size);
             collection.push_front(sElem);
         }
 
@@ -145,9 +145,12 @@ bool SmartPointer<T,size>::collect(){
             collection.remove(*p);
 
             if(p->memoryLocation) {
-                delete[] p->memoryLocation;
+                if (p->memorySize > 0) {
+                    delete[] p->memoryLocation;
+                } else {
+                    delete p->memoryLocation;
+                }
             }
-
             break;
         }
     } while(p != collection.end());
