@@ -32,7 +32,7 @@ bool operator==(SmartElement<T> &sm1, SmartElement<T> &sm2){
 template <typename T, int S = 0>
 class SmartPointer {
 
-    list<SmartElement<T>> collection;
+    static list<SmartElement<T>> collection;
 
     T *address;
     unsigned int memorySize;
@@ -163,9 +163,9 @@ SmartPointer<T,size>::SPInfo(T *ptr) {
 
 template <class T,int size>
 void SmartPointer<T,size>::shutdown(){
+  auto p = collection.begin();
   if(p.size() == 0) return; // list is empty
 
-  auto p = collection.begin();
   for(p = collection.begin(); p != collection.end(); p++){
     p->referenceCounter = 0;
   }
