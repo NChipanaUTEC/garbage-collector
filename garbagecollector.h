@@ -142,6 +142,7 @@ bool SmartPointer<T,size>::collect(){
         memoryFreed = true;
 
             if(p->memoryLocation) {
+              std::cout <<"Garbage collected\n";
                 if (p->memorySize > 0) {
                     delete[] p->memoryLocation;
                 } else {
@@ -150,11 +151,8 @@ bool SmartPointer<T,size>::collect(){
             }
             break;
         }
-
-        break;
-    }
     return memoryFreed;
-}
+  }
 
 template <class T, int size>
 T* SmartPointer<T, size>::operator=(T *ptr) {
