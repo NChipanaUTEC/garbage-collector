@@ -5,7 +5,7 @@ using namespace std;
 // Esta clase representa un elemento en el garbage collector
 // Para identificar un elemento se necesita un contador de referencias,
 // un puntero a la ubicación en memoria y una variable de tamaño.
-template <typename T>
+template <class T>
 class SmartElement {
 public:
     unsigned int referenceCounter;
@@ -15,7 +15,7 @@ public:
     // Chequear lo de los arrays;
 
     // El constructor debe ser completado
-    SmartElement(T *memLoc, unsigned int size) {
+    SmartElement(T *memLoc, unsigned int size = 0) {
         referenceCounter = 1;
         memoryLocation = memLoc;
         memorySize = size;
@@ -24,44 +24,45 @@ public:
 
 // Esta sobrecarga no veo como no usarla
 template <class T>
-bool operator==(SmartElement<T> &sm1, SmartElement<T> &sm2){
+bool operator== (const SmartElement<T> &sm1, const SmartElement<T> &sm2){
     return (sm1.memoryLocation == sm2.memoryLocation);
 }
 
 // Para el smart pointer si o si se necesita el address y el tamaño
-template <typename T, int S = 0>
+template <class T, int size = 0>
 class SmartPointer {
-
-    list<SmartElement<T>> collection;
+public:
+    static list<SmartElement<T>> collection;
 
     T *address;
     unsigned int memorySize;
     static bool first;
     typename list<SmartElement<T>>::iterator SPInfo(T *sptr);
 
-public:
     typedef Iter<T> SPiterator;
 
     // REVISAR CONSTRUCTOR DE SMART POINTER
-    SmartPointer(T* addr) {
-      if(first) atexit(shutdown);
-      first = false;
-      SmartElement<T> inf = SPInfo(address);
+    SmartPointer(T* addr = NULL) {
+        if(first) {
+            atexit(shutdown);
+        } 
+        first = false;
+        auto inf = SPInfo(address);
 
-        if (inf  != collection.end()) {
-            inf.referenceCounter++;
+        if (inf != collection.end()) {
+            inf->referenceCounter++;
         } else {
-            SmartElement<T> sElem(addr, S);
+            SmartElement<T> sElem(addr, size);
             collection.push_front(sElem);
         }
 
         address = addr;
-        memorySize = S;
+        memorySize = size;
     }
 
     SmartPointer(const SmartPointer &sPtr) {
-        SmartElement<T> p = SPInfo(sPtr.address);
-        p.referenceCounter++;
+        auto p = SPInfo(sPtr.address);
+        p->referenceCounter++;
         address = sPtr.address;
         memorySize = sPtr.memorySize;
     }
@@ -77,6 +78,13 @@ public:
     // Sobrecargas obvias si las pongo
     // flecha, posicion, (), *
 
+    // el shutdown y collect va a ser necesario para liberar toda la memoria
+    static bool collect();
+
+    T *operator=(T *t);
+
+    SmartPointer &operator=(SmartPointer &rv);
+
     T &operator*() { return *address; }
 
     T *operator->() { return address; }
@@ -90,93 +98,110 @@ public:
     // Los iteradores son como tal si se usa iter.h
     // Return an Iter to the start of the allocated memory.
     Iter<T> begin(){
-        //int size;
-        //size = 1;
-        return Iter<T>(address,address,address+1);
+        return Iter<T>(address, address, address + memorySize);
     }
 
     // Return an Iter to one past the end of an allocated array.
     Iter<T> end(){
-        //int size;
-        //size = 1;
-        return Iter<T>(address+1,address,address+1);
+        return Iter<T>(address + memorySize, address, address + memorySize);
     }
 
-    // el shutdown y collect va a ser necesario para liberar toda la memoria
-    static bool collect();
+    static int collectionSize() {
+        return collection.size();
+    }
 
     static void shutdown();
 };
 
+template <class T, int size>
+    list<SmartElement<T>> SmartPointer<T,size>::collection;
+
+template <class T, int size>
+    bool SmartPointer<T, size>::first = true;
 
 template <class T, int size>
 SmartPointer<T,size>::~SmartPointer() {
-  auto p = SPInfo(address);
-  if(p->referenceCounter)
-      p-> referenceCounter--; // Decrement ref count
-  #ifdef DISPLAY
-    cout << "SmartPointer going out of scope.\n";
-  #endif
+    auto p = SPInfo(address);
+    if(p->referenceCounter)
+        p-> referenceCounter--; // Decrement ref count
 
-  // Collect garbage when a pointer goes out of scope.
-  collect();
+    // Collect garbage when a pointer goes out of scope.
+    collect();
+
 }
 
 
 template <class T, int size>
 bool SmartPointer<T,size>::collect(){
-  bool memoryFreed = false;
+    bool memoryFreed = false;
 
-  auto p = collection.begin();
-  do{
-    for(p; p != collection.end(); p++) {
-      if(p->referenceCounter > 0) continue;
+    auto p = collection.begin();
+    do{
+        for(p; p != collection.end(); p++) {
+            if(p->referenceCounter > 0) continue;
 
-      memoryFreed = true;
+            memoryFreed = true;
 
-      collection.remove(*p);
+            collection.remove(*p);
 
-      if(p->memoryLocation) {
-        #ifdef DISPLAY
-          cout << "Deleting array of size "<< p->memorySize << endl;
-        #endif
-        delete[] p->memoryLocation;
-      }
+            if(p->memoryLocation) {
+                delete[] p->memoryLocation;
+            }
 
-      break;
+            break;
+        }
+    } while(p != collection.end());
+
+    return memoryFreed;
+}
+
+template <class T, int size>
+T* SmartPointer<T, size>::operator=(T *ptr) {
+    SmartElement<T> p = SPInfo(address);
+    p->referenceCounter--;
+
+    p = SPInfo(ptr);
+    if (p != collection.end()) {
+        p->referenceCounter++;
+    } else {
+        SmartElement<T> sElem(ptr, size);
+        collection.push_front(sElem);
     }
-  } while(p != collection.end());
+}
 
-  return memoryFreed;
+template <class T, int size>
+SmartPointer<T, size> &SmartPointer<T,size>::operator= (SmartPointer &rv) {
+    auto p = SPInfo(address);
+    p->referenceCounter--;
+
+    p = SPInfo(rv.address);
+    p->referenceCounter++;
+
+    address = rv.address;
+
+    return rv;
 }
 
 template <class T, int size>
 typename list<SmartElement<T>>::iterator
 SmartPointer<T,size>::SPInfo(T *ptr) {
-  auto p = collection.begin();
-  for(p; p != collection.end(); p++) {
-    if(p->memoryLocation == ptr) return p;
-  }
-  return p;
+    auto p = collection.begin();
+    for(p; p != collection.end(); p++) {
+        if(p->memoryLocation == ptr) return p;
+    }
+    return p;
 }
 
 
 template <class T,int size>
-void SmartPointer<T,size>::shutdown(){
-  if(p.size() == 0) return; // list is empty
+void SmartPointer<T,size>::shutdown() {
+    if(collectionSize() == 0) {
+        return;
+    }// list is empty
 
-  auto p = collection.begin();
-  for(p = collection.begin(); p != collection.end(); p++){
-    p->referenceCounter = 0;
-  }
+    for (auto p = collection.begin(); p != collection.end(); p++){
+        p->referenceCounter = 0;
+    }
 
-  #ifdef DISPLAY
-    cout << "Before collecting for shutdown() for "<< typeid(T).name() << "\n";
-  #endif
-
-  collect();
-
-  #ifdef DISPLAY
-    cout << "After collecting for shutdown() for "<< typeid(T).name() << "\n";
-  #endif
+    collect();
 }
