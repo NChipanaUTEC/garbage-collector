@@ -52,7 +52,7 @@ public:
         if (inf != collection.end()) {
             inf->referenceCounter++;
         } else {
-            SmartElement<T> sElem(address, size);
+            SmartElement<T> sElem(addr, size);
             collection.push_front(sElem);
         }
 
@@ -136,22 +136,20 @@ bool SmartPointer<T,size>::collect(){
     bool memoryFreed = false;
 
     auto p = collection.begin();
-    do{
-        for(p; p != collection.end(); p++) {
-            if(p->referenceCounter > 0) continue;
+    for(p; p != collection.end(); p++) {
+        if(p->referenceCounter > 0) continue;
 
-            memoryFreed = true;
+        memoryFreed = true;
 
-            collection.remove(*p);
+        collection.remove(*p);
 
-            if(p->memoryLocation) {
-                delete[] p->memoryLocation;
-            }
-
-            break;
+        if(p->memoryLocation) {
+            std::cout<<"Garbage collected\n";
+            delete p->memoryLocation;
         }
-    } while(p != collection.end());
 
+        break;
+    }
     return memoryFreed;
 }
 

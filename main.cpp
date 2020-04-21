@@ -10,6 +10,6 @@ int main(int argc, char const *argv[]) {
   myPointer = new int(4);*/
 
   SmartPointer<int> myPointer = new int(26);
-  
+  SmartPointer<int> otherPointer = myPointer;
   return 0;
 }
