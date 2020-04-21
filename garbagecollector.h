@@ -18,6 +18,7 @@ public:
     SmartElement(T *memLoc, unsigned int size) {
         referenceCounter = 1;
         memoryLocation = memoryLocation;
+        memorySize = size;
     }
 };
 
@@ -28,23 +29,41 @@ bool operator==(SmartElement<T> &sm1, SmartElement<T> &sm2){
 }
 
 // Para el smart pointer si o si se necesita el address y el tamaño
-template <typename T, int S>
+template <typename T, int S = 0>
 class SmartPointer {
-public:
+
+    list<SmartElement<T>> collection;
+
     T *address;
     unsigned int memorySize;
     typename list<SmartElement<T>>::iterator SPInfo(T *sptr);
 
+public:
     typedef Iter<T> SPiterator;
 
     // REVISAR CONSTRUCTOR DE SMART POINTER
-    SmartPointer() {
+    SmartPointer(T* addr) {
+        SmartElement<T> inf = SPInfo(addr);
 
+        if (inf  != collection.end()) {
+            inf->referenceCounter++;
+        } else {
+            SmartElement<T> sElem(addr, S);
+            collection.push_front(sElem);
+        }
+
+        address = addr;
+        memorySize = S;
     }
 
-    ~SmartPointer() {
+    SmartPointer(const SmartPointer &sPtr) {
+        SmartElement<T> p = SPInfo(sPtr.address);
 
+        address = sPtr.address;
+        memorySize = sPtr.memorySize;
     }
+
+    ~SmartPointer();
 
     // Operaciones necesarias:
     // - Coleccion
@@ -53,13 +72,17 @@ public:
     // LAS FUNCIONES MAS IMPORTANTES SON COLLECT Y SHUTDOWN
 
     // Sobrecargas obvias si las pongo
-    // flecha y posicion
-    // No incluyo sobrecarga de ()
+    // flecha, posicion, (), *
+
+    T &operator*() { return *addres; }
+
     T *operator->() { return address; }
 
     T &operator[] (int i){
         return address[i];
     }
+
+    operator T*() { return address; }
 
     // Los iteradores son como tal si se usa iter.h
     // Return an Iter to the start of the allocated memory.
