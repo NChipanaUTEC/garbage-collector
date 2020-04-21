@@ -6,7 +6,7 @@ using namespace std;
 
 // This class defines an element that is stored
 // in the garbage collection info list.
-template <class T> class GCInfo{
+template <class T> class GCInfo {
 public:
   unsigned refcount; // current reference count
 
@@ -23,18 +23,18 @@ public:
   // Here mPtr points to the allocated memory.
   // If this is an array, then size specifies
   // the size of the array
-  GCInfo(T *mPtr, unsigned size=0){
+  GCInfo(T *mPtr, unsigned size=0) {
     refcount = 1;
     memPtr = mPtr;
-    if(size != 0){isArray = true;}
-    else{isArray = false;}
+    if(size != 0) isArray = true;
+    else isArray = false;
     arraySize = size;
   }
 };
 
 // Overloading operator== allows GCInfos to be compared.
 // This is needed by the STL list class.
-template <class T> bool operator==(const GCInfo<T> &ob1, const GCInfo<T> &ob2){
+template <class T> bool operator==(const GCInfo<T> &ob1, const GCInfo<T> &ob2) {
   return (ob1.memPtr == ob2.memPtr);
 }
 
@@ -44,7 +44,7 @@ template <class T> bool operator==(const GCInfo<T> &ob1, const GCInfo<T> &ob2){
 // that was dynamically allocated using new.
 // When used to refer to an allocated array,
 // specify the array size.
-template <class T, int size=0> class GCPtr{
+template <class T, int size=0> class GCPtr {
   // gclist maintains the garbage collection list.
   static list <GCInfo<T>> gclist;
 
@@ -69,11 +69,9 @@ template <class T, int size=0> class GCPtr{
 
    typedef Iter<T> GCiterator;
 
-   GCPtr(T* t=NULL){
+   GCPtr(T* t=NULL) {
      // Register shutdown() as an exit function.
-     if(first){
-       atexit(shutdown);
-     }
+     if(first) atexit(shutdown);
      first = false;
 
      auto p = findPtrInfo(t);
@@ -81,19 +79,18 @@ template <class T, int size=0> class GCPtr{
      // If t is already in gclist, then
      // increment its reference count.
      // Otherwise, add it to the list.
-     if(p != gclist.end()){
+     if(p != gclist.end())
        p->refcount++;
-     }
-     else{
+     else {
        // Create and store this entry
-       GCInfo<T> gcObj(t,size);
+       GCInfo<T> gcObj(t, size);
        gclist.push_front(gcObj);
      }
 
      addr = t;
      arraySize = size;
-     if(size > 0){isArray = true;}
-     else {isArray = false;}
+     if(size > 0) isArray = true;
+     else isArray = false;
      #ifdef DISPLAY
         cout << "Constructing GCPtr.";
         if(isArray){
@@ -103,7 +100,25 @@ template <class T, int size=0> class GCPtr{
           cout << endl;
         }
      #endif
-   }
+    }
+
+    // Copy Contructor
+    GCPtr(const GCPtr &ob) {
+      auto p = findPtrInfo(ob.addr);
+      p->refcount++; // increment ref count
+
+      addr = ob.addr;
+      arraySize = ob.arraySize;
+      if (arraySize > 0) isArray = true;
+      else isArray = false;
+      #ifdef DISPLAY
+        cout << "Constructing copy.";
+        if (isArray)
+          cout << " Size is " << arraySize << endl;
+        else
+          cout << endl;
+      #endif
+    }
 
    ~GCPtr();
 
@@ -119,7 +134,7 @@ template <class T, int size=0> class GCPtr{
 
    // Return a reference to the object pointed
    // to by this GCPtr.
-   T &operator*(){
+   T &operator*() {
      return *addr;
    }
 
@@ -133,22 +148,22 @@ template <class T, int size=0> class GCPtr{
    }
 
    // Conversion function to T*.
-   operator T*(){return addr;}
+   operator T*() {return addr;}
 
    // Return an Iter to the start of the allocated memory.
    Iter<T> begin(){
      //int size;
-     if(isArray){size = arraySize;}
-     else{size = 1;}
-     return Iter<T>(addr,addr,addr+size);
+     if(isArray) size = arraySize;
+     else size = 1;
+     return Iter<T>(addr, addr, addr + size);
    }
 
    // Return an Iter to one past the end of an allocated array.
    Iter<T> end(){
      //int size;
-     if(isArray){size = arraySize;}
-     else{size = 1;}
-     return Iter<T>(addr+size,addr,addr+size);
+     if(isArray) size = arraySize; 
+     else size = 1;
+     return Iter<T>(addr + size, addr, addr + size);
    }
 
    // Return the size of gclist for this type
@@ -160,7 +175,6 @@ template <class T, int size=0> class GCPtr{
 
    // Clear gclist when program exits.
    static void shutdown();
-
 };
 
 // Creates storage for the static variables
@@ -172,25 +186,22 @@ template <class T, int size>
 
 // Destructor for GCPtr.
 template <class T, int size>
-  GCPtr<T,size>::~GCPtr(){
+GCPtr<T,size>::~GCPtr() {
+  auto p = findPtrInfo(addr);
+  if(p->refcount)
+      p-> refcount--; // Decrement ref count
+  #ifdef DISPLAY
+    cout << "GCPtr going out of scope.\n";
+  #endif
 
-    auto p = findPtrInfo(addr);
-    if(p->refcount){
-      // Decrement ref count
-      p-> refcount--;
-    }
-    #ifdef DISPLAY
-      cout << "GCPtr going out of scope\n";
-    #endif
-
-    // Collect garbage when a pointer goes out of scope.
-    collect();
-  }
+  // Collect garbage when a pointer goes out of scope.
+  collect();
+}
 
   // Collect gabage. Returns true if at least
   // one object was freed.
   template <class T, int size>
-  bool GCPtr<T, size>::collect(){
+  bool GCPtr<T, size>::collect() {
     bool memfreed = false;
 
     #ifdef DISPLAY
@@ -201,9 +212,9 @@ template <class T, int size>
     auto p = gclist.begin();
     do{
       // Scan gclist looking for unreferenced pointers.
-      for(p = gclist.begin(); p != gclist.end(); p++){
+      for(p = gclist.begin(); p != gclist.end(); p++) {
         // If in-use skip.
-        if(p->refcount > 0){continue;}
+        if(p->refcount > 0) continue;
 
         memfreed = true;
 
@@ -211,20 +222,20 @@ template <class T, int size>
         gclist.remove(*p);
 
         // Free memory unless the GCPtr is null.
-        if(p->memPtr){
-          if(p->isArray){
+        if(p->memPtr) {
+          if(p->isArray) {
             #ifdef DISPLAY
               cout << "Deleting array of size "<< p->arraySize << endl;
             #endif
-            delete[] p->memPtr;
-          }
-          else{
+            delete[] p->memPtr; //delete array
+          } else {
             #ifdef DISPLAY
               cout << "Deleting "<< *(T*) p->memPtr << "\n";
             #endif
-            delete p->memPtr;
+            delete p->memPtr; //delete single element
           }
         }
+        //Restart the search
         break;
       }
     } while(p != gclist.end());
@@ -239,7 +250,7 @@ template <class T, int size>
 
   // Overload assignment of pointer to GCPtr.
   template <class T, int size>
-  T* GCPtr<T,size>::operator=(T* t){
+  T* GCPtr<T,size>::operator=(T* t) {
     // First decrement the reference count
     // for the memory currently being pointed to.
     auto p = findPtrInfo(addr);
@@ -251,22 +262,21 @@ template <class T, int size>
     // for gclist.
 
     p = findPtrInfo(t);
-    if(p != gclist.end()){
+    if(p != gclist.end())
       p -> refcount++;
-    }
-    else{
+    else {
       // Create and store this entry.
       GCInfo<T> gcObj(t, size);
       gclist.push_front(gcObj);
     }
 
-    addr = t;
+    addr = t; //store the address
     return t;
   }
 
   // Overload assignment of GCPtr to GCPtr.
   template <class T, int size>
-  GCPtr<T, size>& GCPtr<T,size>::operator=(GCPtr &rv){
+  GCPtr<T, size>& GCPtr<T,size>::operator=(GCPtr &rv) {
 
     // First, decrement the reference count
     // for the memory currently being pointed to.
@@ -297,7 +307,7 @@ template <class T, int size>
 
     for(auto p = gclist.begin(); p!=gclist.end(); p++){
       cout <<  "[" << (void *)p->memPtr << "]"<< "      " << p->refcount << "     ";
-      if(p->memPtr){ cout << "   " << *p->memPtr;}
+      if(p->memPtr) cout << "   " << *p->memPtr;
       else{ cout << "    ---";}
       cout << endl;
     }
@@ -307,12 +317,12 @@ template <class T, int size>
   // Find a pointer in gclist.
   template <class T, int size>
   typename list<GCInfo<T>>::iterator
-  GCPtr<T,size>::findPtrInfo(T *ptr){
+  GCPtr<T,size>::findPtrInfo(T *ptr) {
 
     auto p = gclist.begin();
     // Find ptr in gclist.
-    for(p = gclist.begin(); p != gclist.end(); p++){
-      if(p->memPtr == ptr){return p;}
+    for(p = gclist.begin(); p != gclist.end(); p++) {
+      if(p->memPtr == ptr) return p;
     }
 
     return p;
@@ -321,7 +331,7 @@ template <class T, int size>
   // Clear gclist when program exits.
   template <class T, int size>
   void GCPtr<T, size>::shutdown(){
-    if(gclistSize()==0){return;} // list is empty
+    if(gclistSize() == 0) return; // list is empty
 
     for(auto p = gclist.begin(); p != gclist.end(); p++){
       p->refcount = 0;
