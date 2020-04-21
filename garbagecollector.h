@@ -123,10 +123,11 @@ template <class T, int size>
 SmartPointer<T,size>::~SmartPointer() {
     auto p = SPInfo(address);
     if(p->referenceCounter)
-        p-> referenceCounter--; // Decrement ref count
+        p-> referenceCounter--;
 
-    // Collect garbage when a pointer goes out of scope.
+    // Recolectar basura cuando el puntero salga del scope.
     collect();
+    std::cout<<"Garbage collected\n";
 
 }
 
@@ -142,7 +143,7 @@ bool SmartPointer<T,size>::collect(){
         memoryFreed = true;
 
             if(p->memoryLocation) {
-              std::cout <<"Garbage collected\n";
+              //std::cout <<"Garbage collected\n";
                 if (p->memorySize > 0) {
                     delete[] p->memoryLocation;
                 } else {
@@ -194,7 +195,7 @@ SmartPointer<T,size>::SPInfo(T *ptr) {
 
 template <class T,int size>
 void SmartPointer<T,size>::shutdown(){
-    if(collectionSize() == 0) return; // list is empty
+    if(collectionSize() == 0) return;
 
     for(auto p = collection.begin(); p != collection.end(); p++){
         p->referenceCounter = 0;
