@@ -6,7 +6,7 @@ using namespace std;
 // Para identificar un elemento se necesita un contador de referencias,
 // un puntero a la ubicación en memoria y una variable de tamaño.
 template <class T>
-class SmartElement {
+class SmartPointerInfo {
 public:
     unsigned int referenceCounter;
     T *memoryLocation;
@@ -15,7 +15,7 @@ public:
     // Chequear lo de los arrays;
 
     // El constructor debe ser completado
-    SmartElement(T *memLoc, unsigned int size = 0) {
+    SmartPointerInfo(T *memLoc, unsigned int size = 0) {
         referenceCounter = 1;
         memoryLocation = memLoc;
         memorySize = size;
@@ -24,7 +24,7 @@ public:
 
 // Esta sobrecarga no veo como no usarla
 template <class T>
-bool operator== (const SmartElement<T> &sm1, const SmartElement<T> &sm2){
+bool operator== (const SmartPointerInfo<T> &sm1, const SmartPointerInfo<T> &sm2){
     return (sm1.memoryLocation == sm2.memoryLocation);
 }
 
@@ -32,12 +32,12 @@ bool operator== (const SmartElement<T> &sm1, const SmartElement<T> &sm2){
 template <class T, int size = 0>
 class SmartPointer {
 public:
-    static list<SmartElement<T>> collection;
+    static list<SmartPointerInfo<T>> collection;
 
     T *address;
     unsigned int memorySize;
     static bool first;
-    typename list<SmartElement<T>>::iterator SPInfo(T *sptr);
+    typename list<SmartPointerInfo<T>>::iterator SPInfo(T *sptr);
 
     typedef Iter<T> SPiterator;
 
@@ -52,7 +52,7 @@ public:
         if (inf != collection.end()) {
             inf->referenceCounter++;
         } else {
-            SmartElement<T> sElem(addr, size);
+            SmartPointerInfo<T> sElem(addr, size);
             collection.push_front(sElem);
         }
 
@@ -83,7 +83,7 @@ public:
 
     T *operator=(T *t);
 
-    SmartPointer &operator=(SmartPointer &rv);
+    SmartPointer &operator=(SmartPointer &val);
 
     T &operator*() { return *address; }
 
@@ -114,7 +114,7 @@ public:
 };
 
 template <class T, int size>
-    list<SmartElement<T>> SmartPointer<T,size>::collection;
+    list<SmartPointerInfo<T>> SmartPointer<T,size>::collection;
 
 template <class T, int size>
     bool SmartPointer<T, size>::first = true;
@@ -157,33 +157,33 @@ bool SmartPointer<T,size>::collect(){
 
 template <class T, int size>
 T* SmartPointer<T, size>::operator=(T *ptr) {
-    SmartElement<T> p = SPInfo(address);
+    SmartPointerInfo<T> p = SPInfo(address);
     p->referenceCounter--;
 
     p = SPInfo(ptr);
     if (p != collection.end()) {
         p->referenceCounter++;
     } else {
-        SmartElement<T> sElem(ptr, size);
+        SmartPointerInfo<T> sElem(ptr, size);
         collection.push_front(sElem);
     }
 }
 
 template <class T, int size>
-SmartPointer<T, size> &SmartPointer<T,size>::operator= (SmartPointer &rv) {
+SmartPointer<T, size> &SmartPointer<T,size>::operator= (SmartPointer &val) {
     auto p = SPInfo(address);
     p->referenceCounter--;
 
-    p = SPInfo(rv.address);
+    p = SPInfo(val.address);
     p->referenceCounter++;
 
-    address = rv.address;
+    address = val.address;
 
-    return rv;
+    return val;
 }
 
 template <class T, int size>
-typename list<SmartElement<T>>::iterator
+typename list<SmartPointerInfo<T>>::iterator
 SmartPointer<T,size>::SPInfo(T *ptr) {
     auto p = collection.begin();
     for(p; p != collection.end(); p++) {
